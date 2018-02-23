@@ -2,12 +2,646 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>title</title>
+        <title>HTML Reference</title>
+        <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+        <style>
+            .demo-title {
+                line-height: 60px;
+                font-size: 24px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .demo-form {
+                margin: 24px 0px;
+                text-align: center;
+            }
+            .submit-button {
+                float: left;
+            }
+            
+        </style>
+        <script src="https://cdn.steemjs.com/lib/latest/steem.min.js"></script>
+        <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
     </head>
     <body>
-        <div id='word-cloud'>
-            <canvas id='word-cloud-canvas' style='width: 800px;'></canvas>
+        <div class="row">
+            <div class="col-sm-6 offset-sm-3 demo-title">
+                Enter any Steemit account to generate a word cloud
+            </div>
         </div>
+        <div class="row demo-form">
+            <div class="col-sm-3 offset-sm-3">
+                <div class="input-group col-sm-6 offset-sm-6">
+                    <input type="text" class="form-control username-input" placeholder="Username" aria-describedby="sizing-addon2">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <button type="button" class="btn btn-primary submit-button">Generate!</button>
+            </div>
+        </div>
+        <div class="row">
+            <div id='word-cloud' class="col-sm-8 offset-sm-2">
+                <canvas id='word-cloud-canvas'></canvas>
+            </div>
+        </div>
+        <script>
+            $('.submit-button').click(function () { 
+                var account = $('.username-input').val();
+                steem.api.getAccountHistory(account, -1, 10000, function(err, result) {
+                    console.log(err, (result || []).length);
+                    if (result)
+                        extractDataFromBlocks(result);
+                });
+            });
+
+            var extractDataFromBlocks = (blocks) => {
+                var permlinkSet = new Set();
+                var allCommentBodies = [];
+
+                blocks.forEach((block) => {
+                    var [blockNumber, blockInfo] = block;
+                    var {op} = blockInfo;
+                    var [typeOfOperation, opInfo] = op;
+                    if (typeOfOperation === 'comment' && opInfo['author'] === $('.username-input').val()) {
+                        if (!permlinkSet.has(opInfo.permlink)) {
+                            permlinkSet.add(opInfo.permlink);
+                            allCommentBodies.push(opInfo.body);
+                        }
+                    }
+                });
+
+                var wordAndCount = extractWordAndCounts(allCommentBodies.join(' '));
+                var words = Object.keys(wordAndCount);
+                words.sort((word1, word2) => wordAndCount[word2] - wordAndCount[word1]);
+                var listToPrint = [];
+                var normalizingFactor = null;
+                words.forEach((word, index) => {
+                    if (stopList.indexOf(word) !== -1) {
+                        return;
+                    }
+                    if (!normalizingFactor) {
+                        normalizingFactor = 20 / wordAndCount[word];
+                    }
+
+                    if (listToPrint.length < 100) {
+                        listToPrint.push([word, Math.max(1, normalizingFactor * wordAndCount[word])]);
+                    }
+                });
+
+                WordCloud(document.getElementById('word-cloud-canvas'), { list: listToPrint, minSize: 4, drawOutOfBound: true, weightFactor: 5.5 } );
+            };
+
+
+
+            var extractWordAndCounts = (text) => {
+                var wordAndCount = { };
+                var words = text.split(/[ ,.\n]+/);
+                words.forEach((word) => {
+                    var normalizedWord = word.toLowerCase();
+                    if ((/\W/g).test(normalizedWord)) {
+                        return;
+                    }
+                    if (wordAndCount[normalizedWord]) {
+                        wordAndCount[normalizedWord]++;
+                    } else {
+                        wordAndCount[normalizedWord] = 1;
+                    }
+                });
+
+                return wordAndCount;
+            }
+
+            var stopList = `
+                1
+                2
+                3
+                4
+                5
+                6
+                7
+                8
+                9
+                0
+                january
+                february
+                march
+                april
+                may
+                june
+                july
+                august
+                september
+                october
+                november
+                december
+                monday
+                tuesday
+                wednesday
+                thursday
+                friday
+                saturday
+                a
+                b
+                c
+                d
+                e
+                f
+                g
+                h
+                i
+                j
+                k
+                l
+                m
+                n
+                o
+                p
+                q
+                r
+                s
+                t
+                u
+                v
+                w
+                x
+                y
+                z
+                -
+                --
+                ''
+                we've
+                we'll
+                we're
+                who'll
+                who've
+                who's
+                you'll
+                you've
+                you're
+                i'll
+                i've
+                i'm
+                i'd
+                he'll
+                he'd
+                he's
+                she'll
+                she'd
+                she's
+                it'll
+                it'd
+                it's
+                they've
+                they're
+                they'll
+                didn't
+                don't
+                can't
+                won't
+                isn't
+                wasn't
+                couldn't
+                should't
+                wouldn't
+                ve
+                ll
+                re
+                th
+                rd
+                st
+                doing
+                allow
+                examining
+                using
+                during
+                within
+                across
+                among
+                whether
+                especially
+                without
+                actually
+                another
+                am
+                because
+                cannot
+                the
+                of
+                to
+                and
+                a
+                in
+                is
+                it
+                you
+                that
+                he
+                was
+                for
+                on
+                are
+                with
+                as
+                I
+                his
+                they
+                be
+                at
+                one
+                have
+                this
+                from
+                or
+                had
+                by
+                hot
+                word
+                but
+                what
+                some
+                we
+                yet
+                can
+                out
+                other
+                were
+                all
+                there
+                when
+                up
+                use
+                your
+                how
+                said
+                an
+                each
+                she
+                which
+                do
+                their
+                time
+                if
+                will
+                shall
+                way
+                about
+                many
+                then
+                them
+                would
+                like
+                so
+                these
+                her
+                long
+                make
+                thing
+                see
+                him
+                two
+                has
+                look
+                more
+                day
+                could
+                go
+                come
+                did
+                no
+                yes
+                most
+                my
+                over
+                know
+                than
+                call
+                first
+                who
+                may
+                down
+                side
+                been
+                now
+                find
+                any
+                new
+                part
+                take
+                get
+                place
+                made
+                where
+                after
+                back
+                little
+                only
+                came
+                show
+                every
+                good
+                me
+                our
+                under
+                upon
+                very
+                through
+                just
+                great
+                say
+                low
+                cause
+                much
+                mean
+                before
+                move
+                right
+                too
+                same
+                tell
+                does
+                set
+                three
+                want
+                well
+                also
+                put
+                here
+                must
+                big
+                high
+                such
+                why
+                ask
+                men
+                went
+                kind
+                need
+                try
+                again
+                near
+                should
+                still
+                between
+                never
+                last
+                let
+                though
+                might
+                saw
+                left
+                late
+                run
+                don't
+                while
+                close
+                few
+                seem
+                next
+                got
+                always
+                those
+                both
+                often
+                thus
+                won't
+                not
+                into
+                inside
+                its
+                makes
+                tenth
+                trying
+                i
+                me
+                my
+                myself
+                we
+                us
+                our
+                ours
+                ourselves
+                you
+                your
+                yours
+                yourself
+                yourselves
+                he
+                him
+                his
+                himself
+                she
+                her
+                hers
+                herself
+                it
+                its
+                itself
+                they
+                them
+                their
+                theirs
+                themselves
+                what
+                which
+                who
+                whom
+                this
+                that
+                these
+                those
+                am
+                is
+                are
+                was
+                were
+                be
+                been
+                being
+                have
+                has
+                had
+                having
+                do
+                does
+                did
+                doing
+                will
+                would
+                shall
+                should
+                can
+                could
+                may
+                might
+                must
+                ought
+                i'm
+                you're
+                he's
+                she's
+                it's
+                we're
+                they're
+                i've
+                you've
+                we've
+                they've
+                i'd
+                you'd
+                he'd
+                she'd
+                we'd
+                they'd
+                i'll
+                you'll
+                he'll
+                she'll
+                we'll
+                they'll
+                isn't
+                aren't
+                wasn't
+                weren't
+                hasn't
+                haven't
+                hadn't
+                doesn't
+                don't
+                didn't
+                won't
+                wouldn't
+                shan't
+                shouldn't
+                can't
+                cannot
+                couldn't
+                mustn't
+                let's
+                that's
+                who's
+                what's
+                here's
+                there's
+                when's
+                where's
+                why's
+                how's
+                daren't
+                needn't
+                oughtn't
+                mightn't
+                a
+                an
+                the
+                and
+                but
+                if
+                or
+                because
+                as
+                until
+                while
+                of
+                at
+                by
+                for
+                with
+                about
+                against
+                between
+                into
+                through
+                during
+                before
+                after
+                above
+                below
+                to
+                from
+                up
+                down
+                in
+                out
+                on
+                off
+                over
+                under
+                again
+                further
+                then
+                once
+                here
+                there
+                when
+                where
+                why
+                how
+                all
+                any
+                both
+                each
+                few
+                more
+                most
+                other
+                some
+                such
+                no
+                nor
+                not
+                only
+                own
+                same
+                so
+                than
+                too
+                very
+                one
+                every
+                least
+                less
+                many
+                now
+                ever
+                never
+                say
+                says
+                said
+                also
+                get
+                go
+                goes
+                just
+                made
+                make
+                put
+                see
+                seen
+                whether
+                like
+                well
+                back
+                even
+                still
+                way
+                take
+                since
+                another
+                however
+                two
+                three
+                four
+                five
+                first
+                second
+                new
+                old
+                high
+                long`.split(/[ ,.\n]+/);
+        </script>
         <script>
             /*!
                 * wordcloud2.js
@@ -1224,107 +1858,112 @@
         </script>
         <script>
             // var list = [['foo', 12], ['bar', 6]];
-            var list = [ [ 'the', 104 ],
-                [ 'to', 72 ],
-                [ 'i', 51 ],
-                [ 'and', 50 ],
-                [ 'of', 48 ],
-                [ 'a', 47 ],
-                [ 'is', 32 ],
-                [ 'it', 29 ],
-                [ 'for', 27 ],
-                [ 'as', 24 ],
-                [ 'you', 21 ],
-                [ 'on', 19 ],
-                [ 'that', 17 ],
-                [ 'if', 16 ],
-                [ 'will', 16 ],
-                [ 'are', 16 ],
-                [ 'be', 15 ],
-                [ 'in', 15 ],
-                [ 'this', 15 ],
-                [ 'they', 15 ],
-                [ 'with', 14 ],
-                [ 'value', 14 ],
-                [ '1', 13 ],
-                [ 'my', 13 ],
-                [ 'but', 13 ],
-                [ 'accounts', 12 ],
-                [ 'could', 11 ],
-                [ 'only', 11 ],
-                [ 'about', 10 ],
-                [ 'so', 9 ],
-                [ 'like', 9 ],
-                [ 'network', 9 ],
-                [ 'do', 9 ],
-                [ 'want', 8 ],
-                [ '2', 8 ],
-                [ 'not', 8 ],
-                [ 'many', 8 ],
-                [ 'how', 8 ],
-                [ 'an', 8 ],
-                [ 'problem', 8 ],
-                [ 'blockchain', 8 ],
-                [ 'me', 8 ],
-                [ 'all', 8 ],
-                [ 'have', 8 ],
-                [ 'can', 7 ],
-                [ 'than', 7 ],
-                [ 'at', 7 ],
-                [ 'more', 7 ],
-                [ 'create', 7 ],
-                [ 'account', 7 ],
-                [ 'because', 7 ],
-                [ 'there', 7 ],
-                [ 'them', 7 ],
-                [ 'has', 6 ],
-                [ 'get', 6 ],
-                [ 'creating', 6 ],
-                [ 'bob', 6 ],
-                [ 'what', 6 ],
-                [ 'much', 6 ],
-                [ 'make', 6 ],
-                [ 'currency', 6 ],
-                [ 'was', 6 ],
-                [ 'system', 6 ],
-                [ 'economic', 6 ],
-                [ 'people', 6 ],
-                [ 'know', 6 ],
-                [ 'fake', 6 ],
-                [ 'would', 6 ],
-                [ 'example', 6 ],
-                [ 'up', 5 ],
-                [ 'some', 5 ],
-                [ 'one', 5 ],
-                [ 'years', 5 ],
-                [ 'think', 5 ],
-                [ 'very', 5 ],
-                [ 'from', 5 ],
-                [ 'hard', 5 ],
-                [ 'asics', 4 ],
-                [ 'products', 4 ],
-                [ 'financial', 4 ],
-                [ 'always', 4 ],
-                [ 'their', 4 ],
-                [ 'replace', 4 ],
-                [ 'reward', 4 ],
-                [ 'bitcoin', 4 ],
-                [ 'dlive', 4 ],
-                [ 'were', 4 ],
-                [ 'user', 4 ],
-                [ 'bets', 4 ],
-                [ 'users', 4 ],
-                [ 'just', 4 ],
-                [ 'long', 4 ],
-                [ 'expensive', 4 ],
-                [ 'use', 4 ],
-                [ 'no', 4 ],
-                [ 'existing', 4 ],
-                [ 'she', 4 ],
-                [ 'e', 4 ],
-                [ 'having', 4 ],
-                [ 'put', 4 ] ];
-            WordCloud(document.getElementById('word-cloud-canvas'), { list: list } );
+            var list = [ [ 'value', 14 ],
+            [ 'accounts', 12 ],
+            [ 'network', 9 ],
+            [ 'blockchain', 8 ],
+            [ 'problem', 8 ],
+            [ 'create', 8 ],
+            [ 'account', 7 ],
+            [ 'fake', 6 ],
+            [ 'economic', 6 ],
+            [ 'currency', 6 ],
+            [ 'bob', 6 ],
+            [ 'example', 6 ],
+            [ 'system', 6 ],
+            [ 'people', 6 ],
+            [ 'creating', 6 ],
+            [ 'hard', 5 ],
+            [ 'think', 5 ],
+            [ 'years', 5 ],
+            [ 'bitcoin', 4 ],
+            [ 'things', 4 ],
+            [ 'reward', 4 ],
+            [ 'user', 4 ],
+            [ 'existing', 4 ],
+            [ 'dlive', 4 ],
+            [ 'bet', 4 ],
+            [ 'bets', 4 ],
+            [ 'users', 4 ],
+            [ 'asics', 4 ],
+            [ 'around', 4 ],
+            [ 'replace', 4 ],
+            [ 'financial', 4 ],
+            [ 'products', 4 ],
+            [ 'expensive', 4 ],
+            [ 'sums', 3 ],
+            [ 'agree', 3 ],
+            [ 'enough', 3 ],
+            [ 'grow', 3 ],
+            [ 'technology', 3 ],
+            [ 'existence', 3 ],
+            [ 'work', 3 ],
+            [ 'sarah', 3 ],
+            [ 'grows', 3 ],
+            [ 'really', 3 ],
+            [ 'mining', 3 ],
+            [ 'started', 3 ],
+            [ 'transactions', 3 ],
+            [ 'hope', 3 ],
+            [ 'built', 3 ],
+            [ 'bot', 3 ],
+            [ 'pretty', 3 ],
+            [ 'someone', 3 ],
+            [ 'cryptocurrencies', 3 ],
+            [ 'excited', 3 ],
+            [ 'machines', 3 ],
+            [ 'give', 3 ],
+            [ 'tried', 3 ],
+            [ 'small', 3 ],
+            [ 'bots', 3 ],
+            [ 'potential', 3 ],
+            [ 'start', 3 ],
+            [ 'feel', 3 ],
+            [ 'means', 3 ],
+            [ 'thought', 3 ],
+            [ 'course', 3 ],
+            [ 'confidence', 3 ],
+            [ 'win', 3 ],
+            [ 'store', 3 ],
+            [ 'changes', 3 ],
+            [ 'cash', 3 ],
+            [ 'flow', 3 ],
+            [ 'traditional', 3 ],
+            [ 'step', 3 ],
+            [ 'market', 3 ],
+            [ 'cost', 3 ],
+            [ 'listen', 3 ],
+            [ 'post', 2 ],
+            [ 'replaces', 2 ],
+            [ 'crypto', 2 ],
+            [ 'higher', 2 ],
+            [ 'cap', 2 ],
+            [ 'derivatives', 2 ],
+            [ 'smaller', 2 ],
+            [ 'current', 2 ],
+            [ 'reason', 2 ],
+            [ 'making', 2 ],
+            [ 'discounted', 2 ],
+            [ 'companies', 2 ],
+            [ 'facebook', 2 ],
+            [ 'far', 2 ],
+            [ 'read', 2 ],
+            [ 'hoping', 2 ],
+            [ 'various', 2 ],
+            [ 'smart', 2 ],
+            [ 'contract', 2 ],
+            [ 'quickly', 2 ],
+            [ 'bank', 2 ],
+            [ 'issue', 2 ],
+            [ 'sense', 2 ],
+            [ 'buy', 2 ],
+            [ 'couple', 2 ] ];
+
+            var canvas = document.getElementById('word-cloud-canvas');
+            canvas.height = window.innerHeight * .75;
+            canvas.width = window.innerWidth * .6666;
+
+            WordCloud(document.getElementById('word-cloud-canvas'), { list: list, minSize: 4, drawOutOfBound: true, weightFactor: 5.5 } );
         </script>
     </body>
 </html>
