@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>HTML Reference</title>
+        <title>Steemit Word Cloud</title>
         <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
         <style>
             .demo-title {
@@ -20,6 +20,8 @@
             }
             
         </style>
+        <script src="https://cdn.steemjs.com/lib/latest/steem.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
         <script
             src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -44,6 +46,19 @@
         <div class="row">
             <div id='word-cloud' class="col-sm-8 offset-sm-2">
                 <canvas id='word-cloud-canvas'></canvas>
+            </div>
+        </div>
+        <div class="row">
+            <div id='sentiment' class="col-sm-8 offset-sm-2">
+                <canvas id='sentiment-canvas'></canvas>
+            </div>
+        </div>
+        <div class="row">
+            <div id='sentiment' class="col-sm-6 offset-sm-3">
+                Sentiment analysis determines automatically how positive or negative some text is with 0 being neutral sentiment.
+                The analysis isn't perfect but it should help you see if a user's post is worded using positive or negative language.
+
+                5 is the most extreme positive and -5 is the most extreme negative.
             </div>
         </div>
         <script src="build/js/index.js"></script>

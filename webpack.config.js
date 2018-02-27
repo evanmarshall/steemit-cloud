@@ -23,5 +23,9 @@ module.exports = {
                 }
             }
         ]
+    },
+    externals: {
+        steem: 'steem',
+        'chart.js': 'Chart'
     }
 }
