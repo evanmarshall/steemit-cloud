@@ -25,7 +25,7 @@ var getWebpackCallback = function(cb) {
     }
 }
 
-gulp.task('compile', function(cb) {
+gulp.task('build', function(cb) {
     return webpack(webpackConfig).run(getWebpackCallback(cb));
 });
 

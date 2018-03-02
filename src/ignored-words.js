@@ -524,4 +524,25 @@ export const ignoredWords = `
     new
     old
     high
-    long`.split(/[ ,.\n]+/);
+    long
+    thank
+    think
+    please
+    moreover
+    maybe
+    soon
+    like
+    liked
+    used
+    already
+    keep
+    instead
+    example
+    really
+    give
+    btw
+    post
+    lot
+    away
+    around
+    issue`.split(/[ ,.\n]+/);
